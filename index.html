@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Bot Web App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: white; padding: 20px; }
+        .search-box { width: 100%; padding: 10px; border-radius: 5px; border: none; }
+        .song-card { background: #1e1e1e; padding: 15px; margin-top: 10px; border-radius: 8px; display: flex; align-items: center; }
+        .song-card img { width: 50px; height: 50px; border-radius: 5px; margin-right: 15px; }
+        .btn { background: #24a1de; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        #player { width: 100%; margin-top: 20px; display: none; }
+    </style>
+</head>
+<body>
+    <h3>🎵 Search & Listen</h3>
+    <input type="text" id="searchQuery" class="search-box" placeholder="Enter song name...">
+    <button class="btn" onclick="searchMusic()" style="margin-top: 10px;">Search</button>
+
+    <div id="results"></div>
+    <audio id="player" controls autoplay></audio>
+
+    <script>
+        const API_URL = "https://jiosavan-api2.vercel.app";
+
+        async function searchMusic() {
+            const query = document.getElementById('searchQuery').value;
+            const res = await fetch(${API_URL}/api/search/songs?query=${query});
+            const data = await res.json();
+            
+            let html = '';
+            data.data.results.forEach(song => {
+                // Get the high quality 320kbps link (usually last in the array)
+                const streamUrl = song.downloadUrl[song.downloadUrl.length - 1].url;
+                
+                html += 
+                    <div class="song-card">
+                        <img src="${song.image[1].url}" alt="cover">
+                        <div style="flex-grow:1">
+                            <b>${song.name}</b><br>
+                            <small>${song.artists.primary[0].name}</small>
+                        </div>
+                        <button class="btn" onclick="playSong('${streamUrl}')">Play</button>
+                    </div>
+                ;
+            });
+            document.getElementById('results').innerHTML = html;
+        }
+
+        function playSong(url) {
+            const player = document.getElementById('player');
+            player.src = url;
+            player.style.display = 'block';
+            player.play();
+        }
+
+        // Initialize Telegram WebApp
+        Telegram.WebApp.ready();
+    </script>
+</body>
+</html>
