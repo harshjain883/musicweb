@@ -3,61 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music Bot Web App</title>
+    <title>VibeMusic | Next-Gen Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; background: #121212; color: white; padding: 20px; }
-        .search-box { width: 100%; padding: 10px; border-radius: 5px; border: none; }
-        .song-card { background: #1e1e1e; padding: 15px; margin-top: 10px; border-radius: 8px; display: flex; align-items: center; }
-        .song-card img { width: 50px; height: 50px; border-radius: 5px; margin-right: 15px; }
-        .btn { background: #24a1de; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
-        #player { width: 100%; margin-top: 20px; display: none; }
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: white;
+            transition: background 0.5s ease;
+        }
+        /* Glassmorphism Effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+        }
+        .song-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            transition: 0.3s;
+        }
+        /* Hidden Scrollbar */
+        ::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body>
-    <h3>🎵 Search & Listen</h3>
-    <input type="text" id="searchQuery" class="search-box" placeholder="Enter song name...">
-    <button class="btn" onclick="searchMusic()" style="margin-top: 10px;">Search</button>
+<body class="p-4 pb-32">
 
-    <div id="results"></div>
-    <audio id="player" controls autoplay></audio>
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold tracking-tighter">VibeMusic</h1>
+        <div class="w-10 h-10 rounded-full glass flex items-center justify-center">🎧</div>
+    </div>
+
+    <div class="relative mb-8">
+        <input type="text" id="searchInput" placeholder="Search songs, artists..." 
+               class="w-full p-4 glass outline-none text-white placeholder-gray-400">
+        <button onclick="searchMusic()" class="absolute right-4 top-4 text-cyan-400 font-bold">Search</button>
+    </div>
+
+    <div id="results" class="grid grid-cols-2 gap-4">
+        </div>
+
+    <div id="player-ui" class="fixed bottom-4 left-4 right-4 glass p-4 hidden">
+        <div class="flex items-center gap-4">
+            <img id="p-img" class="w-14 h-14 rounded-lg shadow-lg" src="">
+            <div class="flex-1 overflow-hidden">
+                <h4 id="p-name" class="font-bold truncate">Song Name</h4>
+                <p id="p-artist" class="text-xs text-gray-400 truncate">Artist</p>
+            </div>
+            <button onclick="togglePlay()" id="playBtn" class="bg-white text-black w-10 h-10 rounded-full flex items-center justify-center font-bold">II</button>
+        </div>
+        <audio id="audio" class="hidden"></audio>
+        <div class="w-full bg-gray-700 h-1 mt-3 rounded-full overflow-hidden">
+            <div id="progress" class="bg-cyan-400 h-full" style="width: 0%"></div>
+        </div>
+    </div>
 
     <script>
-        const API_URL = "https://jiosavan-api2.vercel.app";
+        const API_URL = "https://jiosavan-api2.vercel.app/api";
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
 
         async function searchMusic() {
-            const query = document.getElementById('searchQuery').value;
-            const res = await fetch(${API_URL}/api/search/songs?query=${query});
-            const data = await res.json();
+            const query = document.getElementById('searchInput').value;
+            if(!query) return;
+
+            const res = await fetch(${API_URL}/search/songs?query=${query});
+            const { data } = await res.json();
             
             let html = '';
-            data.data.results.forEach(song => {
-                // Get the high quality 320kbps link (usually last in the array)
+            data.results.forEach(song => {
                 const streamUrl = song.downloadUrl[song.downloadUrl.length - 1].url;
+                const img = song.image[2].url; // High res image
                 
                 html += 
-                    <div class="song-card">
-                        <img src="${song.image[1].url}" alt="cover">
-                        <div style="flex-grow:1">
-                            <b>${song.name}</b><br>
-                            <small>${song.artists.primary[0].name}</small>
-                        </div>
-                        <button class="btn" onclick="playSong('${streamUrl}')">Play</button>
-                    </div>
-                ;
+                <div class="song-card glass p-3 text-center cursor-pointer" onclick="playSong('${streamUrl}', '${song.name.replace(/'/g, "")}', '${song.artists.primary[0].name}', '${img}')">
+                    <img src="${img}" class="w-full aspect-square rounded-xl mb-2">
+                    <p class="text-sm font-semibold truncate">${song.name}</p>
+                    <p class="text-[10px] text-gray-400">${song.artists.primary[0].name}</p>
+                </div>;
             });
             document.getElementById('results').innerHTML = html;
         }
+        function playSong(url, name, artist, img) {
+            const audio = document.getElementById('audio');
+            document.getElementById('p-img').src = img;
+            document.getElementById('p-name').innerText = name;
+            document.getElementById('p-artist').innerText = artist;
+            document.getElementById('player-ui').classList.remove('hidden');
+            
+            audio.src = url;
+            audio.play();
 
-        function playSong(url) {
-            const player = document.getElementById('player');
-            player.src = url;
-            player.style.display = 'block';
-            player.play();
+            // Update background color based on "vibe" (Resso feature)
+            document.body.style.background = linear-gradient(135deg, #1a1a1a, #24243e);
         }
 
-        // Initialize Telegram WebApp
-        Telegram.WebApp.ready();
+        function togglePlay() {
+            const audio = document.getElementById('audio');
+            const btn = document.getElementById('playBtn');
+            if (audio.paused) { audio.play(); btn.innerText = "II"; }
+            else { audio.pause(); btn.innerText = "▶"; }
+        }
+
+        // Progress bar logic
+        const audio = document.getElementById('audio');
+        audio.ontimeupdate = () => {
+            const prog = (audio.currentTime / audio.duration) * 100;
+            document.getElementById('progress').style.width = prog + "%";
+        };
     </script>
 </body>
 </html>
