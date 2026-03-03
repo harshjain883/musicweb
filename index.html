@@ -3,118 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VibeMusic | Next-Gen Player</title>
+    <title>ViFlow - Music Experience</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body {
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            min-height: 100vh;
-            color: white;
-            transition: background 0.5s ease;
-        }
-        /* Glassmorphism Effect */
-        .glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-        }
-        .song-card:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-2px);
-            transition: 0.3s;
-        }
-        /* Hidden Scrollbar */
-        ::-webkit-scrollbar { display: none; }
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap');
+        body { font-family: 'Outfit', sans-serif; background-color: #000000; color: #ffffff; overflow-x: hidden; }
+        .glass-panel { background: rgba(30, 30, 30, 0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid rgba(255,255,255,0.05); }
+        .card-hover:hover { background: rgba(50, 50, 50, 0.8); transform: translateY(-4px); transition: all 0.3s ease; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* Range Sliders */
+        input[type="range"] { -webkit-appearance: none; background: transparent; }
+        input[type="range"]::-webkit-slider-runnable-track { height: 4px; background: #3f3f46; border-radius: 2px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%; background: #a855f7; margin-top: -4px; cursor: pointer; }
     </style>
 </head>
-<body class="p-4 pb-32">
+<body class="pb-32">
 
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold tracking-tighter">VibeMusic</h1>
-        <div class="w-10 h-10 rounded-full glass flex items-center justify-center">🎧</div>
-    </div>
-
-    <div class="relative mb-8">
-        <input type="text" id="searchInput" placeholder="Search songs, artists..." 
-               class="w-full p-4 glass outline-none text-white placeholder-gray-400">
-        <button onclick="searchMusic()" class="absolute right-4 top-4 text-cyan-400 font-bold">Search</button>
-    </div>
-
-    <div id="results" class="grid grid-cols-2 gap-4">
-        </div>
-
-    <div id="player-ui" class="fixed bottom-4 left-4 right-4 glass p-4 hidden">
-        <div class="flex items-center gap-4">
-            <img id="p-img" class="w-14 h-14 rounded-lg shadow-lg" src="">
-            <div class="flex-1 overflow-hidden">
-                <h4 id="p-name" class="font-bold truncate">Song Name</h4>
-                <p id="p-artist" class="text-xs text-gray-400 truncate">Artist</p>
+    <nav class="p-6 flex flex-col md:flex-row justify-between items-center sticky top-0 bg-black/90 backdrop-blur-md z-40 gap-4">
+        <h1 class="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 flex items-center gap-2">
+            <i data-lucide="music" class="text-purple-400"></i> ViFlow
+        </h1>
+        
+        <div class="relative w-full md:w-1/3 max-w-md">
+            <div class="relative">
+                <input id="searchInput" type="text" placeholder="Search songs, artists..." autocomplete="off"
+                    class="w-full bg-zinc-900/80 border border-zinc-800 rounded-2xl py-3 px-12 focus:outline-none focus:border-purple-500 transition-colors">
+                <i data-lucide="search" class="absolute left-4 top-3.5 text-zinc-400 w-5 h-5"></i>
             </div>
-            <button onclick="togglePlay()" id="playBtn" class="bg-white text-black w-10 h-10 rounded-full flex items-center justify-center font-bold">II</button>
+            
+            <div id="suggestionsBox" class="absolute w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden hidden z-50 max-h-80 overflow-y-auto">
+                </div>
         </div>
-        <audio id="audio" class="hidden"></audio>
-        <div class="w-full bg-gray-700 h-1 mt-3 rounded-full overflow-hidden">
-            <div id="progress" class="bg-cyan-400 h-full" style="width: 0%"></div>
+    </nav>
+
+    <main class="px-6 space-y-10 max-w-7xl mx-auto mt-4">
+        
+        <section>
+            <div class="flex items-center gap-2 mb-6">
+                <i data-lucide="trending-up" class="text-pink-500"></i>
+                <h2 class="text-2xl font-medium">Top 10 Indian Tracks</h2>
+            </div>
+            <div id="indianChartGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+                <p class="text-zinc-500 animate-pulse">Loading charts...</p>
+            </div>
+        </section>
+
+        <section>
+            <div class="flex items-center gap-2 mb-6">
+                <i data-lucide="globe" class="text-blue-500"></i>
+                <h2 class="text-2xl font-medium">Top 10 International</h2>
+            </div>
+            <div id="intlChartGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+                 <p class="text-zinc-500 animate-pulse">Loading charts...</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="fixed bottom-0 left-0 right-0 glass-panel p-4 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            
+            <div class="flex items-center gap-4 w-full md:w-1/3">
+                <div class="relative w-14 h-14 rounded-lg overflow-hidden shrink-0 group">
+                    <img id="playerImg" src="https://images.unsplash.com/photo-1614680376593-902f74a936c1?w=150&q=80" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center cursor-pointer">
+                        <i data-lucide="chevron-up" class="text-white"></i>
+                    </div>
+                </div>
+                <div class="overflow-hidden">
+                    <p id="playerTitle" class="font-medium text-lg truncate tracking-wide">ViFlow Ready</p>
+                    <p id="playerArtist" class="text-sm text-zinc-400 truncate">Pick a track to start</p>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center w-full md:w-1/3 gap-3">
+                <div class="flex items-center gap-8">
+                    <button onclick="playPrev()" class="text-zinc-400 hover:text-white transition"><i data-lucide="skip-back" class="w-6 h-6"></i></button>
+                    <button id="playBtn" onclick="togglePlay()" class="bg-purple-500 text-white p-3 rounded-full hover:bg-purple-400 hover:scale-105 transition-all shadow-lg shadow-purple-500/30">
+                        <i data-lucide="play" class="w-6 h-6" fill="currentColor"></i>
+                    </button>
+                    <button onclick="playNext()" class="text-zinc-400 hover:text-white transition"><i data-lucide="skip-forward" class="w-6 h-6"></i></button>
+                </div>
+                
+                <div class="flex items-center gap-3 w-full max-w-md">
+                    <span id="currTime" class="text-xs text-zinc-400 w-10 text-right">0:00</span>
+                    <input id="seekSlider" type="range" value="0" class="w-full">
+                    <span id="totalTime" class="text-xs text-zinc-400 w-10">0:00</span>
+                </div>
+            </div>
+
+            <div class="hidden md:flex items-center justify-end gap-3 w-1/3 text-zinc-400">
+                <i data-lucide="volume-2" class="w-5 h-5"></i>
+                <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="0.8" class="w-24">
+            </div>
         </div>
-    </div>
+    </footer>
+
+    <audio id="mainAudio"></audio>
 
     <script>
-        const API_URL = "https://jiosavan-api2.vercel.app/api";
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+        const API_URL = 'https://jiosavan-api2.vercel.app';
+        let currentSongId = null;
+        let queue = [];
+        let currentQueueIndex = 0;
+        
+        const audio = document.getElementById('mainAudio');
+        const playBtn = document.getElementById('playBtn');
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsBox = document.getElementById('suggestionsBox');
 
-        async function searchMusic() {
-            const query = document.getElementById('searchInput').value;
-            if(!query) return;
+        lucide.createIcons();
 
-            const res = await fetch(${API_URL}/search/songs?query=${query});
-            const { data } = await res.json();
-            
-            let html = '';
-            data.results.forEach(song => {
-                const streamUrl = song.downloadUrl[song.downloadUrl.length - 1].url;
-                const img = song.image[2].url; // High res image
-                
-                html += 
-                <div class="song-card glass p-3 text-center cursor-pointer" onclick="playSong('${streamUrl}', '${song.name.replace(/'/g, "")}', '${song.artists.primary[0].name}', '${img}')">
-                    <img src="${img}" class="w-full aspect-square rounded-xl mb-2">
-                    <p class="text-sm font-semibold truncate">${song.name}</p>
-                    <p class="text-[10px] text-gray-400">${song.artists.primary[0].name}</p>
-                </div>;
-            });
-            document.getElementById('results').innerHTML = html;
+        // --- 1. Fetch Charts (Dashboard) ---
+        async function loadDashboard() {
+            try {
+                // Fetching Hindi top charts (assuming ID 110858205 is a top hindi playlist, adjust as needed from API)
+                const hindiRes = await fetch(`${API_URL}/search/songs?query=bollywood top 10`);
+                const hindiData = await hindiRes.json();
+                renderCards(hindiData.data.results.slice(0, 10), 'indianChartGrid');
+
+                // Fetching English top charts
+                const intlRes = await fetch(`${API_URL}/search/songs?query=global top 10`);
+                const intlData = await intlRes.json();
+                renderCards(intlData.data.results.slice(0, 10), 'intlChartGrid');
+            } catch (err) { console.error("Error loading charts:", err); }
         }
-        function playSong(url, name, artist, img) {
-            const audio = document.getElementById('audio');
-            document.getElementById('p-img').src = img;
-            document.getElementById('p-name').innerText = name;
-            document.getElementById('p-artist').innerText = artist;
-            document.getElementById('player-ui').classList.remove('hidden');
-            
-            audio.src = url;
-            audio.play();
 
-            // Update background color based on "vibe" (Resso feature)
-            document.body.style.background = linear-gradient(135deg, #1a1a1a, #24243e);
+        function renderCards(songs, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = songs.map(song => `
+                <div class="card-hover bg-zinc-900/50 p-3 rounded-2xl cursor-pointer border border-zinc-800/50" 
+                     onclick="playSong('${song.id}')">
+                    <div class="relative aspect-square mb-3 overflow-hidden rounded-xl">
+                        <img src="${song.image[2].link}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                            <i data-lucide="play-circle" class="w-12 h-12 text-white" fill="white"></i>
+                        </div>
+                    </div>
+                    <p class="font-medium text-sm truncate text-zinc-100">${song.name}</p>
+                    <p class="text-xs text-zinc-500 truncate mt-1">${song.primaryArtists}</p>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // --- 2. Search & Auto-Suggestions ---
+        let debounceTimer;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(debounceTimer);
+            const query = e.target.value.trim();
+            
+            if (query.length < 2) {
+                suggestionsBox.classList.add('hidden');
+                return;
+            }
+
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`${API_URL}/search/songs?query=${query}`);
+                    const data = await res.json();
+                    const results = data.data.results.slice(0, 6); // Show top 6
+                    
+                    if(results.length > 0) {
+                        suggestionsBox.innerHTML = results.map(song => `
+                            <div class="flex items-center gap-3 p-3 hover:bg-zinc-800 cursor-pointer transition" 
+                                 onclick="playSong('${song.id}'); document.getElementById('suggestionsBox').classList.add('hidden');">
+                                <img src="${song.image[0].link}" class="w-10 h-10 rounded shadow">
+                                <div class="overflow-hidden">
+                                    <p class="text-sm font-medium truncate text-white">${song.name}</p>
+                                    <p class="text-xs text-zinc-400 truncate">${song.primaryArtists}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                        suggestionsBox.classList.remove('hidden');
+                    }
+                } catch (err) { console.error("Search error", err); }
+            }, 400); // 400ms debounce
+        });
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                suggestionsBox.classList.add('hidden');
+            }
+        });
+
+        // --- 3. Audio Player Logic ---
+        async function playSong(id) {
+            try {
+                currentSongId = id;
+                const res = await fetch(`${API_URL}/songs?id=${id}`);
+                const data = await res.json();
+                const song = data.data[0];
+
+                // Update UI
+                document.getElementById('playerTitle').innerText = song.name;
+                document.getElementById('playerArtist').innerText = song.primaryArtists;
+                document.getElementById('playerImg').src = song.image[2].link;
+                
+                // Play Audio
+                const downloadLink = song.downloadUrl.find(q => q.quality === '320kbps') || song.downloadUrl[song.downloadUrl.length - 1];
+                audio.src = downloadLink.link;
+                audio.play();
+                updatePlayState(true);
+
+            } catch (err) { console.error("Error playing song:", err); }
         }
 
         function togglePlay() {
-            const audio = document.getElementById('audio');
-            const btn = document.getElementById('playBtn');
-            if (audio.paused) { audio.play(); btn.innerText = "II"; }
-            else { audio.pause(); btn.innerText = "▶"; }
+            if (!audio.src) return;
+            if (audio.paused) { audio.play(); updatePlayState(true); } 
+            else { audio.pause(); updatePlayState(false); }
         }
 
-        // Progress bar logic
-        const audio = document.getElementById('audio');
-        audio.ontimeupdate = () => {
-            const prog = (audio.currentTime / audio.duration) * 100;
-            document.getElementById('progress').style.width = prog + "%";
+        function updatePlayState(isPlaying) {
+            playBtn.innerHTML = isPlaying 
+                ? `<i data-lucide="pause" class="w-6 h-6" fill="currentColor"></i>` 
+                : `<i data-lucide="play" class="w-6 h-6" fill="currentColor"></i>`;
+            lucide.createIcons();
+        }
+
+        // --- 4. Autoplay Similar Songs ---
+        audio.onended = async () => {
+            if (!currentSongId) return;
+            try {
+                // Fetch recommendations based on the current song
+                const res = await fetch(`${API_URL}/songs/${currentSongId}/suggestions`);
+                const data = await res.json();
+                
+                if (data.data && data.data.length > 0) {
+                    // Play the first recommended song
+                    playSong(data.data[0].id);
+                } else {
+                    updatePlayState(false); // Stop if no suggestions found
+                }
+            } catch (err) {
+                console.error("Autoplay failed:", err);
+                updatePlayState(false);
+            }
         };
+
+        // --- 5. Controls & Seekbar ---
+        audio.ontimeupdate = () => {
+            const progress = (audio.currentTime / audio.duration) * 100;
+            document.getElementById('seekSlider').value = progress || 0;
+            document.getElementById('currTime').innerText = formatTime(audio.currentTime);
+            document.getElementById('totalTime').innerText = formatTime(audio.duration);
+        };
+
+        document.getElementById('seekSlider').oninput = (e) => {
+            if(audio.duration) {
+                audio.currentTime = (e.target.value / 100) * audio.duration;
+            }
+        };
+
+        document.getElementById('volumeSlider').oninput = (e) => {
+            audio.volume = e.target.value;
+        };
+
+        function formatTime(secs) {
+            if (isNaN(secs)) return "0:00";
+            const min = Math.floor(secs / 60);
+            const sec = Math.floor(secs % 60);
+            return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+        }
+
+        // Initialize
+        loadDashboard();
     </script>
 </body>
 </html>
